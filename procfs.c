@@ -25,6 +25,97 @@ static u64 utime = 99;
 static unsigned long nvcsw = 99;
 static unsigned long nivcsw = 99;
 
+static void my_itos(char *str, unsigned long long int a)
+{
+    char temp[50];
+    for (int i = 0; i < 50; i++)
+    {
+        temp[i] = '\0';
+    }
+    for (int i = 0;; i++)
+    {
+        if (a == 0)
+        {
+            break;
+        }
+        switch (a % 10)
+        {
+        case 0:
+            temp[i] = '0';
+            break;
+        case 1:
+            temp[i] = '1';
+            break;
+        case 2:
+            temp[i] = '2';
+            break;
+        case 3:
+            temp[i] = '3';
+            break;
+        case 4:
+            temp[i] = '4';
+            break;
+        case 5:
+            temp[i] = '5';
+            break;
+        case 6:
+            temp[i] = '6';
+            break;
+        case 7:
+            temp[i] = '7';
+            break;
+        case 8:
+            temp[i] = '8';
+            break;
+        case 9:
+            temp[i] = '9';
+            break;
+        }
+        a /= 10;
+    }
+    int j = 0;
+    for (int i = 0; i < 50; i++)
+    {
+        if (temp[49 - i] != '\0')
+        {
+            str[j] = temp[49 - i];
+            j++;
+        }
+    }
+    return;
+}
+
+static unsigned int my_sizeof(char *str)
+{
+    unsigned int len = 0;
+    for (; str[len] != '\0'; len++)
+        ;
+    return len + 1;
+}
+
+static void my_strcat(char *rt, char *a, char *b, char *c)
+{
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    for (; i < my_sizeof(a) - 1; i++)
+    {
+        rt[i] = a[i];
+    }
+    rt[i] = ';';
+    i++;
+    for (; (j + i) < my_sizeof(a) + my_sizeof(b) - 2; j++)
+    {
+        rt[i + j] = b[j];
+    }
+    rt[i + j] = ';';
+    j++;
+    for (; (k + j + i) < my_sizeof(a) + my_sizeof(b) + my_sizeof(b) - 2; k++)
+    {
+        rt[i + j + k] = c[k];
+    }
+}
+
 static ssize_t procfs_read(struct file *filp, char __user *buffer,
                            size_t length, loff_t *offset)
 {
@@ -44,6 +135,14 @@ static ssize_t procfs_read(struct file *filp, char __user *buffer,
     pr_info("nivcsw: %lu\n", nivcsw);
     pr_info("-------------------------");
     put_task_struct(ts);
+    char utime_str[50];
+    char nvcsw_str[50];
+    char nivcsw_str[50];
+    my_itos(utime_str, utime);
+    my_itos(nvcsw_str, nvcsw);
+    my_itos(nivcsw_str, nivcsw);
+    char *message;
+    my_strcat(procfs_buffer, utime_str, nvcsw_str, nivcsw_str);
     //
     if (*offset || procfs_buffer_size == 0)
     {
