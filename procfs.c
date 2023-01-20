@@ -15,7 +15,7 @@
 #endif
 
 #define PROCFS_MAX_SIZE 2048UL
-#define PROCFS_ENTRY_FILENAME "my_enrtry"
+#define PROCFS_ENTRY_FILENAME "my_entry"
 
 static struct proc_dir_entry *our_proc_file;
 static char procfs_buffer[PROCFS_MAX_SIZE];
@@ -75,11 +75,11 @@ static ssize_t procfs_write(struct file *file, const char __user *buffer,
     if (ret)
     {
         /* Negative error code. */
-        pr_info("ko = %d\n", ret);
+        pr_info("fetch TID failed = %d\n", ret);
     }
     else
     {
-        pr_info("ok = %llu\n", res);
+        pr_info("TID Success = %llu\n", res);
         pid = ret;
         *off = len;
     }
@@ -114,7 +114,7 @@ static const struct file_operations file_ops_4_our_proc_file = {
 
 static int __init procfs3_init(void)
 {
-    our_proc_file = proc_create(PROCFS_ENTRY_FILENAME, 0644, NULL,
+    our_proc_file = proc_create(PROCFS_ENTRY_FILENAME, 0777, NULL,
                                 &file_ops_4_our_proc_file);
     if (our_proc_file == NULL)
     {
