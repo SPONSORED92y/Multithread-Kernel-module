@@ -1,7 +1,9 @@
-obj-m += procfs.o
+obj-m += hello-1.o
+
+PWD := $(CURDIR)
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=/mnt/c/src/OS_HW2_Multithread-Kernel-module modules 
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=/mnt/c/src/OS_HW2_Multithread-Kernel-module clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean

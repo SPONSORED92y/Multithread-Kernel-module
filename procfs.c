@@ -34,7 +34,7 @@ static void my_itos(char *str, unsigned long long int a)
         temp[i1] = '\0';
     }
     int i2 = 0;
-    for (int i2 = 0;; i2++)
+    for (;; i2++)
     {
         if (a == 0)
         {
