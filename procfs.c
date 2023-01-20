@@ -28,11 +28,13 @@ static unsigned long nivcsw = 99;
 static void my_itos(char *str, unsigned long long int a)
 {
     char temp[50];
-    for (int i = 0; i < 50; i++)
+    int i1 = 0;
+    for (; i1 < 50; i1++)
     {
-        temp[i] = '\0';
+        temp[i1] = '\0';
     }
-    for (int i = 0;; i++)
+    int i2 = 0;
+    for (int i2 = 0;; i2++)
     {
         if (a == 0)
         {
@@ -41,44 +43,45 @@ static void my_itos(char *str, unsigned long long int a)
         switch (a % 10)
         {
         case 0:
-            temp[i] = '0';
+            temp[i2] = '0';
             break;
         case 1:
-            temp[i] = '1';
+            temp[i2] = '1';
             break;
         case 2:
-            temp[i] = '2';
+            temp[i2] = '2';
             break;
         case 3:
-            temp[i] = '3';
+            temp[i2] = '3';
             break;
         case 4:
-            temp[i] = '4';
+            temp[i2] = '4';
             break;
         case 5:
-            temp[i] = '5';
+            temp[i2] = '5';
             break;
         case 6:
-            temp[i] = '6';
+            temp[i2] = '6';
             break;
         case 7:
-            temp[i] = '7';
+            temp[i2] = '7';
             break;
         case 8:
-            temp[i] = '8';
+            temp[i2] = '8';
             break;
         case 9:
-            temp[i] = '9';
+            temp[i2] = '9';
             break;
         }
         a /= 10;
     }
+    int i3 = 0;
     int j = 0;
-    for (int i = 0; i < 50; i++)
+    for (; i3 < 50; i3++)
     {
-        if (temp[49 - i] != '\0')
+        if (temp[49 - i3] != '\0')
         {
-            str[j] = temp[49 - i];
+            str[j] = temp[49 - i3];
             j++;
         }
     }
