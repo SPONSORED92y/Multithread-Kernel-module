@@ -4,7 +4,6 @@
 #include <linux/sched.h>
 #include <linux/uaccess.h>
 #include <linux/version.h>
-
 #include <linux/sched.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
@@ -16,7 +15,7 @@
 #endif
 
 #define PROCFS_MAX_SIZE 2048UL
-#define PROCFS_ENTRY_FILENAME "buffer2k"
+#define PROCFS_ENTRY_FILENAME "my_enrtry"
 
 static struct proc_dir_entry *our_proc_file;
 static char procfs_buffer[PROCFS_MAX_SIZE];
@@ -26,9 +25,10 @@ static u64 utime = 99;
 static unsigned long nvcsw = 99;
 static unsigned long nivcsw = 99;
 
-static void
-get_thread_info(void)
+static ssize_t procfs_read(struct file *filp, char __user *buffer,
+                           size_t length, loff_t *offset)
 {
+    // get_thread_info
     struct task_struct *ts = pid_task(find_vpid(pid), PIDTYPE_PID);
     if (ts == NULL)
     {
@@ -37,18 +37,14 @@ get_thread_info(void)
     utime = ts->utime;
     nvcsw = ts->nvcsw;
     nivcsw = ts->nivcsw;
+    pr_info("-------------------------");
     pr_info("pid: %d\n", pid);
     pr_info("utime: %llu\n", utime);
     pr_info("nvcsw: %lu\n", nvcsw);
     pr_info("nivcsw: %lu\n", nivcsw);
+    pr_info("-------------------------");
     put_task_struct(ts);
-    return;
-}
-
-static ssize_t procfs_read(struct file *filp, char __user *buffer,
-                           size_t length, loff_t *offset)
-{
-    get_thread_info();
+    //
     if (*offset || procfs_buffer_size == 0)
     {
         pr_debug("procfs_read: END\n");
@@ -72,6 +68,21 @@ static ssize_t procfs_write(struct file *file, const char __user *buffer,
     *off += procfs_buffer_size;
 
     pr_debug("procfs_write: write %lu bytes\n", procfs_buffer_size);
+
+    int ret;
+    unsigned long long res;
+    ret = kstrtoull_from_user(buffer, len, 10, &res);
+    if (ret)
+    {
+        /* Negative error code. */
+        pr_info("ko = %d\n", ret);
+    }
+    else
+    {
+        pr_info("ok = %llu\n", res);
+        pid = ret;
+        *off = len;
+    }
     return procfs_buffer_size;
 }
 static int procfs_open(struct inode *inode, struct file *file)

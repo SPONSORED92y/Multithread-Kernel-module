@@ -98,7 +98,7 @@ void *worker_thread(void *ptr)
         if (work.i == -1)
         {
             pthread_mutex_unlock(&mutex1);
-            int proc = open("\proc\entry", O_RDWR);
+            int proc = open("/proc/my_entry", O_RDWR);
             unsigned long long utime = 77;
             unsigned long nvcsw = 77;
             unsigned long nivcsw = 77;
@@ -123,7 +123,7 @@ void *worker_thread(void *ptr)
                 perror("fscanf(nivcsw)");
             }
             close(proc);
-            printf("\tThreadID:%ld Time:%lld(ms) context switch times:%ld", pthread_self(), utime, nvcsw + nivcsw);
+            printf("\tThreadID:%ld Time:%lld(ms) context switch times:%ld\n", pthread_self(), utime, nvcsw + nivcsw);
             pthread_exit(NULL);
         }
         int i, j;
