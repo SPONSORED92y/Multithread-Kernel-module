@@ -15,25 +15,28 @@
 #endif
 
 #define PROCFS_MAX_SIZE 2048UL
-#define PROCFS_ENTRY_FILENAME "my_entry"
+#define PROCFS_ENTRY_FILENAME "my_entry" // proc file system entry created in proc/
 
 static struct proc_dir_entry *our_proc_file;
 static char procfs_buffer[PROCFS_MAX_SIZE];
 static unsigned long procfs_buffer_size = 0;
-static pid_t pid = 215;
-static u64 utime = 99;
-static unsigned long nvcsw = 99;
-static unsigned long nivcsw = 99;
-
+static pid_t pid;            // pid recieved
+static u64 utime;            // requested value
+static unsigned long nvcsw;  // requested value
+static unsigned long nivcsw; // requested value
+//                 |
+// custom function v
 static void my_itos(char *str, unsigned long long int a)
 {
     char temp[50];
     int i1 = 0;
+    int i2 = 0;
+    int i3 = 0;
+    int j = 0;
     for (; i1 < 50; i1++)
     {
         temp[i1] = '\0';
     }
-    int i2 = 0;
     for (;; i2++)
     {
         if (a == 0)
@@ -75,8 +78,7 @@ static void my_itos(char *str, unsigned long long int a)
         }
         a /= 10;
     }
-    int i3 = 0;
-    int j = 0;
+
     for (; i3 < 50; i3++)
     {
         if (temp[49 - i3] != '\0')
@@ -98,6 +100,7 @@ static unsigned int my_sizeof(char *str)
 
 static void my_strcat(char *rt, char *a, char *b, char *c)
 {
+    // format:<a>;<b>;<c>
     int i = 0;
     int j = 0;
     int k = 0;
@@ -107,22 +110,28 @@ static void my_strcat(char *rt, char *a, char *b, char *c)
     }
     rt[i] = ';';
     i++;
-    for (; (j + i) < my_sizeof(a) + my_sizeof(b) - 2; j++)
+    for (; (j + i) < my_sizeof(a) + my_sizeof(b) - 1; j++)
     {
         rt[i + j] = b[j];
     }
     rt[i + j] = ';';
     j++;
-    for (; (k + j + i) < my_sizeof(a) + my_sizeof(b) + my_sizeof(b) - 2; k++)
+    for (; (k + j + i) < my_sizeof(a) + my_sizeof(b) + my_sizeof(b) - 1; k++)
     {
         rt[i + j + k] = c[k];
     }
 }
 
+// custom function ^
+//                 |
 static ssize_t procfs_read(struct file *filp, char __user *buffer,
                            size_t length, loff_t *offset)
 {
-    // get_thread_info
+    char utime_str[50];
+    char nvcsw_str[50];
+    char nivcsw_str[50];
+    char my_message[100];
+    // get thread info
     struct task_struct *ts = pid_task(find_vpid(pid), PIDTYPE_PID);
     if (ts == NULL)
     {
@@ -131,21 +140,19 @@ static ssize_t procfs_read(struct file *filp, char __user *buffer,
     utime = ts->utime;
     nvcsw = ts->nvcsw;
     nivcsw = ts->nivcsw;
-    pr_info("-------------------------");
+    pr_info("||||||||||||||||||||||||||");
     pr_info("pid: %d\n", pid);
     pr_info("utime: %llu\n", utime);
     pr_info("nvcsw: %lu\n", nvcsw);
     pr_info("nivcsw: %lu\n", nivcsw);
-    pr_info("-------------------------");
-    put_task_struct(ts);
-    char utime_str[50];
-    char nvcsw_str[50];
-    char nivcsw_str[50];
+    // put info into one char* and send back
     my_itos(utime_str, utime);
     my_itos(nvcsw_str, nvcsw);
     my_itos(nivcsw_str, nivcsw);
-    char *message;
-    my_strcat(procfs_buffer, utime_str, nvcsw_str, nivcsw_str);
+    my_strcat(my_message, utime_str, nvcsw_str, nivcsw_str); // format:<utime>;<nvcsw>;<nivcsw>
+    pr_info("message:%s\n", my_message);
+    pr_info("||||||||||||||||||||||||||");
+    put_task_struct(ts);
     //
     if (*offset || procfs_buffer_size == 0)
     {
@@ -153,6 +160,7 @@ static ssize_t procfs_read(struct file *filp, char __user *buffer,
         *offset = 0;
         return 0;
     }
+
     procfs_buffer_size = min(procfs_buffer_size, length);
     if (copy_to_user(buffer, procfs_buffer, procfs_buffer_size))
         return -EFAULT;
@@ -164,6 +172,8 @@ static ssize_t procfs_read(struct file *filp, char __user *buffer,
 static ssize_t procfs_write(struct file *file, const char __user *buffer,
                             size_t len, loff_t *off)
 {
+    int ret;
+    unsigned long long res;
     procfs_buffer_size = min(PROCFS_MAX_SIZE, len);
     if (copy_from_user(procfs_buffer, buffer, procfs_buffer_size))
         return -EFAULT;
@@ -171,8 +181,6 @@ static ssize_t procfs_write(struct file *file, const char __user *buffer,
 
     pr_debug("procfs_write: write %lu bytes\n", procfs_buffer_size);
 
-    int ret;
-    unsigned long long res;
     ret = kstrtoull_from_user(buffer, len, 10, &res);
     if (ret)
     {
@@ -181,8 +189,8 @@ static ssize_t procfs_write(struct file *file, const char __user *buffer,
     }
     else
     {
-        pr_info("TID Success = %llu\n", res);
-        pid = ret;
+        pid = res; // implicit conversion between unsigned long long and int
+        pr_info("TID Success = %u\n", pid);
         *off = len;
     }
     return procfs_buffer_size;
@@ -217,7 +225,7 @@ static const struct file_operations file_ops_4_our_proc_file = {
 static int __init procfs3_init(void)
 {
     our_proc_file = proc_create(PROCFS_ENTRY_FILENAME, 0777, NULL,
-                                &file_ops_4_our_proc_file);
+                                &file_ops_4_our_proc_file); // 0777 for convenience
     if (our_proc_file == NULL)
     {
         remove_proc_entry(PROCFS_ENTRY_FILENAME, NULL);

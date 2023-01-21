@@ -1,5 +1,5 @@
-obj-m += hello-1.o
-
+obj-m += my_procfs.o
+ccflags-y := -std=gnu99
 PWD := $(CURDIR)
 
 all:

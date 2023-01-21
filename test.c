@@ -4,10 +4,10 @@
 #include <unistd.h>
 int main()
 {
-    int proc = open("/proc/my_entry", O_RDWR);
-    write(proc, "18", strlen("18"));
+    int proc_fd = open("/proc/my_entry", O_RDWR);
+    write(proc_fd, "2", strlen("2"));
     char c[100];
-    fscanf(proc, "%s", c);
+    read(proc_fd, c, 100);
     printf("%s", c);
-    close(proc);
+    close(proc_fd);
 }
