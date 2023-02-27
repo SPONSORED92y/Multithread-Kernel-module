@@ -150,6 +150,7 @@ static ssize_t procfile_read(struct file *filePointer, char __user *buffer,
     if (ts == NULL)
     {
         pr_info("unable to find task_struct\n");
+        return 0;
     }
     utime = ts->utime;
     nvcsw = ts->nvcsw;

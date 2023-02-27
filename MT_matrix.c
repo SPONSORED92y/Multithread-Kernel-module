@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <fcntl.h>
-#define THREAD_NUM 4
-
+#include <string.h>
+#define THREAD_NUM 1
+void my_itos(char *str, pthread_t a);
 struct DATA
 {
     int **m;
@@ -22,14 +24,14 @@ void *worker_thread(void *);
 
 int main()
 {
-    FILE *fp = fopen("../Test_cases/Test_case_1/a.txt", "r");
+    FILE *fp = fopen("./Test_cases/Test_case_1/a.txt", "r");
     if (fp == NULL)
     {
         perror("fopen");
     }
     fscanf(fp, "%i", &a.row);
     fscanf(fp, "%i", &a.col);
-    FILE *fp2 = fopen("../Test_cases/Test_case_1/b.txt", "r");
+    FILE *fp2 = fopen("./Test_cases/Test_case_1/b.txt", "r");
     if (fp2 == NULL)
     {
         perror("fopen");
@@ -75,7 +77,7 @@ int main()
     }
 
     // write result
-    FILE *fp3 = fopen("../Test_cases/Test_case_1/r.txt", "w");
+    FILE *fp3 = fopen("./Test_cases/Test_case_1/r.txt", "w");
     if (fp3 == NULL)
     {
         perror("fopen");
@@ -98,32 +100,45 @@ void *worker_thread(void *ptr)
         if (work.i == -1)
         {
             pthread_mutex_unlock(&mutex1);
-            int proc = open("/proc/my_entry", O_RDWR);
-            unsigned long long utime = 77;
-            unsigned long nvcsw = 77;
-            unsigned long nivcsw = 77;
-            if (proc < 0)
+            // unsigned long long utime = 77;
+            // unsigned long nvcsw = 77;
+            // unsigned long nivcsw = 77;
+            char *utime;
+            char *nvcsw;
+            char *nivcsw;
+            char pthread_self_str[50];
+            my_itos(pthread_self_str, pthread_self());
+            printf("worker PID:%s\n", pthread_self_str);
+            int proc_fd = open("/proc/my_entry", O_RDWR);
+            if (proc_fd < 0)
             {
-                perror("proc entry");
+                perror("proc_fd entry");
             }
-            if (fprintf(proc, "%ld", pthread_self()) < 0)
+            sleep(1);
+            if (write(proc_fd, pthread_self_str, strlen(pthread_self_str)) < 0)
             {
-                perror("write to proc");
+                perror("write to proc_fd");
             }
-            if (fscanf(proc, "%lld", utime) < 0)
+            sleep(1);
+
+            char out_word[100];
+            if (read(proc_fd, out_word, 100) < 0)
             {
-                perror("fscanf(utime)");
+                perror("write to proc_fd");
             }
-            if (fscanf(proc, "%ld", nvcsw) < 0)
+            sleep(1);
+            if (close(proc_fd) != 0)
             {
-                perror("fscanf(nvcsw)");
+                perror("closing proc_fd");
             }
-            if (fscanf(proc, "%ld", nivcsw) < 0)
-            {
-                perror("fscanf(nivcsw)");
-            }
-            close(proc);
-            printf("\tThreadID:%ld Time:%lld(ms) context switch times:%ld\n", pthread_self(), utime, nvcsw + nivcsw);
+            printf("%s\n", out_word);
+            utime = strtok(out_word, ";");
+            nvcsw = strtok(NULL, ";");
+            nivcsw = strtok(NULL, ";");
+            printf("%s\n", utime);
+            printf("%s\n", nvcsw);
+            printf("%s\n", nivcsw);
+            printf("\tThreadID:%ld Time:%s(ms) context switch times:%ld\n", pthread_self(), utime, strtol(nvcsw, NULL, 10) + strtol(nivcsw, NULL, 10));
             pthread_exit(NULL);
         }
         int i, j;
@@ -146,4 +161,77 @@ void *worker_thread(void *ptr)
             c.m[i][j] += a.m[i][k] * b.m[k][j];
         }
     }
+}
+
+void my_itos(char *str, pthread_t a)
+{
+    char temp[50];
+    int i1 = 0;
+    int i2 = 0;
+    int i3 = 0;
+    int j = 0;
+    for (; i1 < 50; i1++)
+    {
+        temp[i1] = '\0';
+    }
+    for (;; i2++)
+    {
+        if (a == 0)
+        {
+            break;
+        }
+        switch (a % 10)
+        {
+        case 0:
+            temp[i2] = '0';
+            break;
+        case 1:
+            temp[i2] = '1';
+            break;
+        case 2:
+            temp[i2] = '2';
+            break;
+        case 3:
+            temp[i2] = '3';
+            break;
+        case 4:
+            temp[i2] = '4';
+            break;
+        case 5:
+            temp[i2] = '5';
+            break;
+        case 6:
+            temp[i2] = '6';
+            break;
+        case 7:
+            temp[i2] = '7';
+            break;
+        case 8:
+            temp[i2] = '8';
+            break;
+        case 9:
+            temp[i2] = '9';
+            break;
+        }
+        a /= 10;
+    }
+
+    for (; i3 < 50; i3++)
+    {
+        if (temp[49 - i3] != '\0')
+        {
+            str[j] = temp[49 - i3];
+            j++;
+        }
+    }
+    for (; j < 50; j++)
+    {
+        str[j] = '\0';
+    }
+    if (str[0] == '\0')
+    {
+        str[0] = '0';
+        str[1] = '\0';
+    }
+    return;
 }
