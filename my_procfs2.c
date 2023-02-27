@@ -20,7 +20,7 @@ static char procfs_buffer[PROCFS_MAX_SIZE];
 /* The size of the buffer */
 static unsigned long procfs_buffer_size = 0;
 
-// static pid_t pid;            // pid recieved
+static pid_t pid;            // pid recieved
 static u64 utime;            // requested value
 static unsigned long nvcsw;  // requested value
 static unsigned long nivcsw; // requested value
@@ -146,41 +146,41 @@ static ssize_t procfile_read(struct file *filePointer, char __user *buffer,
     char nvcsw_str[50];
     char nivcsw_str[50];
     // get thread info
-    struct task_struct *ts = pid_task(find_vpid(2), PIDTYPE_PID);
+    struct task_struct *ts = pid_task(find_vpid(pid), PIDTYPE_PID);
     if (ts == NULL)
     {
-        pr_info("KK:unable to find task_struct\n");
+        pr_info("unable to find task_struct\n");
     }
     utime = ts->utime;
     nvcsw = ts->nvcsw;
     nivcsw = ts->nivcsw;
-    pr_info("KK:=====read call=========\n");
-    pr_info("KK:pid: %d\n", ts->pid);
-    pr_info("KK:utime: %llu\n", utime);
-    pr_info("KK:nvcsw: %lu\n", nvcsw);
-    pr_info("KK:nivcsw: %lu\n", nivcsw);
-    pr_info("KK:=======================\n");
+    pr_info("=====read call=========\n");
+    pr_info("pid: %d\n", ts->pid);
+    pr_info("utime: %llu\n", utime);
+    pr_info("nvcsw: %lu\n", nvcsw);
+    pr_info("nivcsw: %lu\n", nivcsw);
+    pr_info("=======================\n");
     // put info into one char* and send back
     my_itos(utime_str, utime);
-    pr_info("KK:[myitos utime]:%s\n", utime_str);
+    pr_info("[myitos utime]:%s\n", utime_str);
     my_itos(nvcsw_str, nvcsw);
-    pr_info("KK:[myitos nvcsw]:%s\n", nvcsw_str);
+    pr_info("[myitos nvcsw]:%s\n", nvcsw_str);
     my_itos(nivcsw_str, nivcsw);
-    pr_info("KK:[myitos nivcsw]:%s\n", nivcsw_str);
+    pr_info("[myitos nivcsw]:%s\n", nivcsw_str);
     // my_itos(utime_str, utime);
     // my_itos(nvcsw_str, nvcsw);
     // my_itos(nivcsw_str, nivcsw);
     my_strcat(m, utime_str, nvcsw_str, nivcsw_str); // format:<utime>;<nvcsw>;<nivcsw>
-    pr_info("KK:[mess]:%s\n", m);
+    pr_info("[mess]:%s\n", m);
 
     if (*offset >= len || copy_to_user(buffer, m, len))
     {
-        pr_info("KK:copy_to_user failed\n");
+        pr_info("copy_to_user failed\n");
         ret = 0;
     }
     else
     {
-        pr_info("KK:procfile read %s\n", filePointer->f_path.dentry->d_name.name);
+        pr_info("procfile read %s\n", filePointer->f_path.dentry->d_name.name);
         *offset += len;
     }
 
@@ -191,6 +191,9 @@ static ssize_t procfile_read(struct file *filePointer, char __user *buffer,
 static ssize_t procfile_write(struct file *file, const char __user *buff,
                               size_t len, loff_t *off)
 {
+    int ret;
+    unsigned long long res;
+
     procfs_buffer_size = len;
     if (procfs_buffer_size > PROCFS_MAX_SIZE)
         procfs_buffer_size = PROCFS_MAX_SIZE;
@@ -200,8 +203,20 @@ static ssize_t procfile_write(struct file *file, const char __user *buff,
 
     procfs_buffer[procfs_buffer_size & (PROCFS_MAX_SIZE - 1)] = '\0';
     *off += procfs_buffer_size;
-    pr_info("KK:procfile write %s\n", procfs_buffer);
-
+    pr_info("procfile write %s\n", procfs_buffer);
+    // char* to int
+    ret = kstrtoull_from_user(buff, len, 10, &res);
+    if (ret)
+    {
+        /* Negative error code. */
+        pr_info("fetch TID failed = %d\n", ret);
+    }
+    else
+    {
+        pid = res; // implicit conversion between unsigned long long and int
+        pr_info("TID Success = %u\n", pid);
+        *off = len;
+    }
     return procfs_buffer_size;
 }
 
@@ -227,15 +242,15 @@ static int __init procfs2_init(void)
         return -ENOMEM;
     }
 
-    pr_info("KK:|||||||||||||||||||||||||||||\n");
-    pr_info("KK:/proc/%s created\n", PROCFS_NAME);
+    pr_info("|||||||||||||||||||||||||||||\n");
+    pr_info("/proc/%s created\n", PROCFS_NAME);
     return 0;
 }
 
 static void __exit procfs2_exit(void)
 {
     proc_remove(our_proc_file);
-    pr_info("KK:/proc/%s removed\n", PROCFS_NAME);
+    pr_info("/proc/%s removed\n", PROCFS_NAME);
 }
 
 module_init(procfs2_init);
